@@ -519,7 +519,9 @@ pub struct AccountUpdatedNotification {
 #[ts(export_to = "v2/")]
 pub struct Turn {
     pub id: String,
-    pub items: Vec<ThreadItem>,
+    /// This is currently only populated for resumed threads.
+    /// TODO: properly populate items for all turns.
+    pub items: Option<Vec<ThreadItem>>,
     pub status: TurnStatus,
     pub error: Option<TurnError>,
 }
