@@ -12,12 +12,8 @@ use codex_execpolicy2::PolicyParser;
 enum Cli {
     /// Evaluate a command against a policy.
     Check {
-        #[arg(short, long = "policy", value_name = "PATH", required = true)]
+        #[arg(short, long, value_name = "PATH", required = true)]
         policies: Vec<PathBuf>,
-
-        /// Pretty-print the JSON output.
-        #[arg(long)]
-        pretty: bool,
 
         /// Command tokens to check.
         #[arg(
@@ -33,23 +29,15 @@ enum Cli {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli {
-        Cli::Check {
-            policies,
-            command,
-            pretty,
-        } => cmd_check(policies, command, pretty),
+        Cli::Check { policies, command } => cmd_check(policies, command),
     }
 }
 
-fn cmd_check(policy_paths: Vec<PathBuf>, args: Vec<String>, pretty: bool) -> Result<()> {
-    let policy = load_policies(&policy_paths)?;
+fn cmd_check(policies: Vec<PathBuf>, args: Vec<String>) -> Result<()> {
+    let policy = load_policies(&policies)?;
 
     let eval = policy.check(&args);
-    let json = if pretty {
-        serde_json::to_string_pretty(&eval)?
-    } else {
-        serde_json::to_string(&eval)?
-    };
+    let json = serde_json::to_string_pretty(&eval)?;
     println!("{json}");
     Ok(())
 }
