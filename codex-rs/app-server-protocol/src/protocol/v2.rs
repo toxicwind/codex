@@ -505,6 +505,10 @@ pub struct Thread {
     pub created_at: i64,
     /// [UNSTABLE] Path to the thread on disk.
     pub path: PathBuf,
+    /// Only populated on a `thread/resume` response for now. For all other
+    /// responses and notifications returning a Thread, the turns field
+    /// will be an empty list.
+    pub turns: Vec<Turn>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
@@ -519,6 +523,9 @@ pub struct AccountUpdatedNotification {
 #[ts(export_to = "v2/")]
 pub struct Turn {
     pub id: String,
+    /// Only populated on a `thread/resume` response for now. For all other
+    /// responses and notifications returning a Turn, the items field
+    /// will be an empty list.
     pub items: Vec<ThreadItem>,
     pub status: TurnStatus,
     pub error: Option<TurnError>,
