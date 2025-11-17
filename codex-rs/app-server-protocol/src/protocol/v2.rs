@@ -11,6 +11,7 @@ use codex_protocol::items::AgentMessageContent as CoreAgentMessageContent;
 use codex_protocol::items::TurnItem as CoreTurnItem;
 use codex_protocol::models::ResponseItem;
 use codex_protocol::parse_command::ParsedCommand as CoreParsedCommand;
+use codex_protocol::protocol::FileChange as CoreFileChange;
 use codex_protocol::protocol::RateLimitSnapshot as CoreRateLimitSnapshot;
 use codex_protocol::protocol::RateLimitWindow as CoreRateLimitWindow;
 use codex_protocol::user_input::UserInput as CoreUserInput;
@@ -228,6 +229,55 @@ impl From<CoreParsedCommand> for CommandAction {
                 path,
             },
             CoreParsedCommand::Unknown { cmd } => CommandAction::Unknown { command: cmd },
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[serde(tag = "type", rename_all = "camelCase")]
+#[ts(tag = "type")]
+#[ts(export_to = "v2/")]
+pub enum FileChange {
+    Add {
+        content: String,
+    },
+    Delete {
+        content: String,
+    },
+    Update {
+        unified_diff: String,
+        move_path: Option<PathBuf>,
+    },
+}
+
+impl FileChange {
+    pub fn into_core(self) -> CoreFileChange {
+        match self {
+            FileChange::Add { content } => CoreFileChange::Add { content },
+            FileChange::Delete { content } => CoreFileChange::Delete { content },
+            FileChange::Update {
+                unified_diff,
+                move_path,
+            } => CoreFileChange::Update {
+                unified_diff,
+                move_path,
+            },
+        }
+    }
+}
+
+impl From<CoreFileChange> for FileChange {
+    fn from(value: CoreFileChange) -> Self {
+        match value {
+            CoreFileChange::Add { content } => FileChange::Add { content },
+            CoreFileChange::Delete { content } => FileChange::Delete { content },
+            CoreFileChange::Update {
+                unified_diff,
+                move_path,
+            } => FileChange::Update {
+                unified_diff,
+                move_path,
+            },
         }
     }
 }
@@ -914,6 +964,26 @@ pub struct CommandExecutionRequestApprovalResponse {
     /// Ignored if the decision is `decline` or `cancel`.
     #[serde(default)]
     pub accept_settings: Option<CommandExecutionRequestAcceptSettings>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export_to = "v2/")]
+pub struct FileChangeRequestApprovalParams {
+    pub thread_id: String,
+    pub turn_id: String,
+    pub item_id: String,
+    /// Optional explanatory reason (e.g. request for extra write access).
+    pub reason: Option<String>,
+    /// When set, the agent is asking the user to allow writes under this root
+    /// for the remainder of the session (unclear if this is honored today).
+    pub grant_root: Option<PathBuf>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
+#[ts(export_to = "v2/")]
+pub struct FileChangeRequestApprovalResponse {
+    pub decision: ReviewDecision,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]

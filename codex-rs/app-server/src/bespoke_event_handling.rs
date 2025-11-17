@@ -13,6 +13,8 @@ use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
 use codex_app_server_protocol::CommandExecutionStatus;
 use codex_app_server_protocol::ExecCommandApprovalParams;
 use codex_app_server_protocol::ExecCommandApprovalResponse;
+use codex_app_server_protocol::FileChangeRequestApprovalParams;
+use codex_app_server_protocol::FileChangeRequestApprovalResponse;
 use codex_app_server_protocol::InterruptConversationResponse;
 use codex_app_server_protocol::ItemCompletedNotification;
 use codex_app_server_protocol::ItemStartedNotification;
@@ -61,21 +63,42 @@ pub(crate) async fn apply_bespoke_event_handling(
             changes,
             reason,
             grant_root,
-        }) => {
-            let params = ApplyPatchApprovalParams {
-                conversation_id,
-                call_id,
-                file_changes: changes,
-                reason,
-                grant_root,
-            };
-            let rx = outgoing
-                .send_request(ServerRequestPayload::ApplyPatchApproval(params))
-                .await;
-            tokio::spawn(async move {
-                on_patch_approval_response(event_id, rx, conversation).await;
-            });
-        }
+        }) => match api_version {
+            ApiVersion::V1 => {
+                let params = ApplyPatchApprovalParams {
+                    conversation_id,
+                    call_id,
+                    file_changes: changes,
+                    reason,
+                    grant_root,
+                };
+                let rx = outgoing
+                    .send_request(ServerRequestPayload::ApplyPatchApproval(params))
+                    .await;
+                tokio::spawn(async move {
+                    on_patch_approval_response(event_id, rx, conversation).await;
+                });
+            }
+            ApiVersion::V2 => {
+                // Until we migrate the core to be aware of a first class FileChangeItem
+                // and emit the corresponding EventMsg, we repurpose the call_id as the item_id.
+                let item_id = call_id.clone();
+                let params = FileChangeRequestApprovalParams {
+                    thread_id: conversation_id.to_string(),
+                    // TODO: use the actual IDs once we have them
+                    turn_id: "placeholder_turn_id".to_string(),
+                    item_id,
+                    reason,
+                    grant_root,
+                };
+                let rx = outgoing
+                    .send_request(ServerRequestPayload::FileChangeRequestApproval(params))
+                    .await;
+                tokio::spawn(async move {
+                    on_file_change_request_approval_response(event_id, rx, conversation).await;
+                });
+            }
+        },
         EventMsg::ExecApprovalRequest(ExecApprovalRequestEvent {
             call_id,
             turn_id,
@@ -379,6 +402,49 @@ async fn on_exec_approval_response(
         .await
     {
         error!("failed to submit ExecApproval: {err}");
+    }
+}
+
+async fn on_file_change_request_approval_response(
+    event_id: String,
+    receiver: oneshot::Receiver<JsonValue>,
+    codex: Arc<CodexConversation>,
+) {
+    let response = receiver.await;
+    let value = match response {
+        Ok(value) => value,
+        Err(err) => {
+            error!("request failed: {err:?}");
+            if let Err(submit_err) = codex
+                .submit(Op::PatchApproval {
+                    id: event_id.clone(),
+                    decision: ReviewDecision::Denied,
+                })
+                .await
+            {
+                error!("failed to submit denied PatchApproval after request failure: {submit_err}");
+            }
+            return;
+        }
+    };
+
+    let response = serde_json::from_value::<FileChangeRequestApprovalResponse>(value)
+        .unwrap_or_else(|err| {
+            error!("failed to deserialize FileChangeRequestApprovalResponse: {err}");
+            FileChangeRequestApprovalResponse {
+                decision: V2ReviewDecision::Denied,
+            }
+        });
+
+    let decision = response.decision.to_core();
+    if let Err(err) = codex
+        .submit(Op::PatchApproval {
+            id: event_id,
+            decision,
+        })
+        .await
+    {
+        error!("failed to submit PatchApproval: {err}");
     }
 }
 
