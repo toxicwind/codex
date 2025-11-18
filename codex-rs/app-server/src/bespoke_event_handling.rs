@@ -26,7 +26,12 @@ use codex_app_server_protocol::SandboxCommandAssessment as V2SandboxCommandAsses
 use codex_app_server_protocol::ServerNotification;
 use codex_app_server_protocol::ServerRequestPayload;
 use codex_app_server_protocol::ThreadItem;
+use codex_app_server_protocol::Turn;
+use codex_app_server_protocol::TurnCompletedNotification;
+use codex_app_server_protocol::TurnError;
 use codex_app_server_protocol::TurnInterruptResponse;
+use codex_app_server_protocol::TurnStatus;
+use codex_app_server_protocol::Usage as V2Usage;
 use codex_core::CodexConversation;
 use codex_core::parse_command::shlex_join;
 use codex_core::protocol::ApplyPatchApprovalRequestEvent;
@@ -38,13 +43,39 @@ use codex_core::protocol::McpToolCallBeginEvent;
 use codex_core::protocol::McpToolCallEndEvent;
 use codex_core::protocol::Op;
 use codex_core::protocol::ReviewDecision;
+use codex_core::protocol::TokenUsage;
 use codex_protocol::ConversationId;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::sync::Arc;
+use std::sync::OnceLock;
+use tokio::sync::Mutex;
 use tokio::sync::oneshot;
 use tracing::error;
 
 type JsonValue = serde_json::Value;
+
+#[derive(Default, Clone)]
+struct TurnAccum {
+    last_total_token_usage: Option<TokenUsage>,
+    last_error_message: Option<String>,
+}
+
+type TurnKey = (ConversationId, String);
+
+static TURN_STATE: OnceLock<Arc<Mutex<HashMap<TurnKey, TurnAccum>>>> = OnceLock::new();
+
+fn turn_state() -> &'static Arc<Mutex<HashMap<TurnKey, TurnAccum>>> {
+    TURN_STATE.get_or_init(|| Arc::new(Mutex::new(HashMap::new())))
+}
+
+fn map_usage_to_v2(u: &TokenUsage) -> V2Usage {
+    V2Usage {
+        input_tokens: u.input_tokens as i32,
+        cached_input_tokens: u.cached_input_tokens as i32,
+        output_tokens: u.output_tokens as i32,
+    }
+}
 
 pub(crate) async fn apply_bespoke_event_handling(
     event: Event,
@@ -56,6 +87,9 @@ pub(crate) async fn apply_bespoke_event_handling(
 ) {
     let Event { id: event_id, msg } = event;
     match msg {
+        EventMsg::TaskComplete(_ev) => {
+            handle_turn_complete(conversation_id, event_id, outgoing.clone()).await;
+        }
         EventMsg::ApplyPatchApprovalRequest(ApplyPatchApprovalRequestEvent {
             call_id,
             changes,
@@ -188,6 +222,12 @@ pub(crate) async fn apply_bespoke_event_handling(
                     ))
                     .await;
             }
+            if let Some(info) = token_count_event.info {
+                handle_token_count(conversation_id, event_id, info).await;
+            }
+        }
+        EventMsg::Error(ev) => {
+            handle_error(conversation_id, event_id, ev.message).await;
         }
         EventMsg::ItemStarted(item_started_event) => {
             let item: ThreadItem = item_started_event.item.clone().into();
@@ -302,6 +342,64 @@ pub(crate) async fn apply_bespoke_event_handling(
 
         _ => {}
     }
+}
+
+async fn handle_turn_complete(
+    conversation_id: ConversationId,
+    event_id: String,
+    outgoing: Arc<OutgoingMessageSender>,
+) {
+    // Synthesize turn/completed with last known usage and any captured error.
+    let key = (conversation_id, event_id.clone());
+    let (usage_opt, error_message) = {
+        let state = turn_state();
+        let mut map = state.lock().await;
+        let entry = map.remove(&key).unwrap_or_default();
+        (entry.last_total_token_usage, entry.last_error_message)
+    };
+
+    let usage = usage_opt.as_ref().map(map_usage_to_v2).unwrap_or(V2Usage {
+        input_tokens: 0,
+        cached_input_tokens: 0,
+        output_tokens: 0,
+    });
+
+    let (status, error) = if let Some(message) = error_message {
+        (TurnStatus::Failed, Some(TurnError { message }))
+    } else {
+        (TurnStatus::Completed, None)
+    };
+
+    let notification = TurnCompletedNotification {
+        turn: Turn {
+            id: event_id,
+            items: None,
+            status,
+            error,
+        },
+        usage,
+    };
+    outgoing
+        .send_server_notification(ServerNotification::TurnCompleted(notification))
+        .await;
+}
+
+async fn handle_error(conversation_id: ConversationId, event_id: String, message: String) {
+    let key = (conversation_id, event_id);
+    let state = turn_state();
+    let mut map = state.lock().await;
+    map.entry(key).or_default().last_error_message = Some(message);
+}
+
+async fn handle_token_count(
+    conversation_id: ConversationId,
+    event_id: String,
+    info: codex_core::protocol::TokenUsageInfo,
+) {
+    let key = (conversation_id, event_id);
+    let state = turn_state();
+    let mut map = state.lock().await;
+    map.entry(key).or_default().last_total_token_usage = Some(info.total_token_usage);
 }
 
 async fn on_patch_approval_response(
