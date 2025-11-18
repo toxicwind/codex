@@ -69,11 +69,29 @@ fn turn_state() -> &'static Arc<Mutex<HashMap<TurnKey, TurnAccum>>> {
     TURN_STATE.get_or_init(|| Arc::new(Mutex::new(HashMap::new())))
 }
 
-fn map_usage_to_v2(u: &TokenUsage) -> V2Usage {
-    V2Usage {
-        input_tokens: u.input_tokens as i32,
-        cached_input_tokens: u.cached_input_tokens as i32,
-        output_tokens: u.output_tokens as i32,
+async fn take_turn_accum(
+    conversation_id: ConversationId,
+    event_id: &str,
+) -> (Option<TokenUsage>, Option<String>) {
+    let key = (conversation_id, event_id.to_string());
+    let state = turn_state();
+    let mut map = state.lock().await;
+    let entry = map.remove(&key).unwrap_or_default();
+    (entry.last_total_token_usage, entry.last_error_message)
+}
+
+fn map_usage_to_v2(u: Option<&TokenUsage>) -> V2Usage {
+    match u {
+        Some(u) => V2Usage {
+            input_tokens: u.input_tokens as i32,
+            cached_input_tokens: u.cached_input_tokens as i32,
+            output_tokens: u.output_tokens as i32,
+        },
+        None => V2Usage {
+            input_tokens: 0,
+            cached_input_tokens: 0,
+            output_tokens: 0,
+        },
     }
 }
 
@@ -338,38 +356,21 @@ pub(crate) async fn apply_bespoke_event_handling(
                     }
                 }
             }
+
+            handle_turn_interrupted(conversation_id, event_id, outgoing).await;
         }
 
         _ => {}
     }
 }
 
-async fn handle_turn_complete(
-    conversation_id: ConversationId,
+async fn emit_turn_completed_with_status(
     event_id: String,
+    status: TurnStatus,
+    usage: V2Usage,
+    error: Option<TurnError>,
     outgoing: Arc<OutgoingMessageSender>,
 ) {
-    // Synthesize turn/completed with last known usage and any captured error.
-    let key = (conversation_id, event_id.clone());
-    let (usage_opt, error_message) = {
-        let state = turn_state();
-        let mut map = state.lock().await;
-        let entry = map.remove(&key).unwrap_or_default();
-        (entry.last_total_token_usage, entry.last_error_message)
-    };
-
-    let usage = usage_opt.as_ref().map(map_usage_to_v2).unwrap_or(V2Usage {
-        input_tokens: 0,
-        cached_input_tokens: 0,
-        output_tokens: 0,
-    });
-
-    let (status, error) = if let Some(message) = error_message {
-        (TurnStatus::Failed, Some(TurnError { message }))
-    } else {
-        (TurnStatus::Completed, None)
-    };
-
     let notification = TurnCompletedNotification {
         turn: Turn {
             id: event_id,
@@ -381,6 +382,39 @@ async fn handle_turn_complete(
     };
     outgoing
         .send_server_notification(ServerNotification::TurnCompleted(notification))
+        .await;
+}
+
+async fn handle_turn_complete(
+    conversation_id: ConversationId,
+    event_id: String,
+    outgoing: Arc<OutgoingMessageSender>,
+) {
+    // Synthesize turn/completed with last known usage and any captured error.
+    let (usage_opt, error_message) = take_turn_accum(conversation_id, &event_id).await;
+
+    let usage = map_usage_to_v2(usage_opt.as_ref());
+
+    let (status, error) = if let Some(message) = error_message {
+        (TurnStatus::Failed, Some(TurnError { message }))
+    } else {
+        (TurnStatus::Completed, None)
+    };
+
+    emit_turn_completed_with_status(event_id, status, usage, error, outgoing).await;
+}
+
+async fn handle_turn_interrupted(
+    conversation_id: ConversationId,
+    event_id: String,
+    outgoing: Arc<OutgoingMessageSender>,
+) {
+    let (usage_opt, error_message) = take_turn_accum(conversation_id, &event_id).await;
+
+    let error = error_message.map(|message| TurnError { message });
+    let usage = map_usage_to_v2(usage_opt.as_ref());
+
+    emit_turn_completed_with_status(event_id, TurnStatus::Interrupted, usage, error, outgoing)
         .await;
 }
 

@@ -72,7 +72,6 @@ use codex_app_server_protocol::SetDefaultModelResponse;
 use codex_app_server_protocol::Thread;
 use codex_app_server_protocol::ThreadArchiveParams;
 use codex_app_server_protocol::ThreadArchiveResponse;
-use codex_app_server_protocol::ThreadItem;
 use codex_app_server_protocol::ThreadListParams;
 use codex_app_server_protocol::ThreadListResponse;
 use codex_app_server_protocol::ThreadResumeParams;
@@ -2272,9 +2271,6 @@ impl CodexMessageProcessor {
             }
         };
 
-        // Keep a copy of v2 inputs for the notification payload.
-        let v2_inputs_for_notif = params.input.clone();
-
         // Map v2 input items to core input items.
         let mapped_items: Vec<CoreInputItem> = params
             .input
@@ -2314,10 +2310,7 @@ impl CodexMessageProcessor {
             Ok(turn_id) => {
                 let turn = Turn {
                     id: turn_id.clone(),
-                    items: vec![ThreadItem::UserMessage {
-                        id: turn_id,
-                        content: v2_inputs_for_notif,
-                    }],
+                    items: None,
                     status: TurnStatus::InProgress,
                     error: None,
                 };
