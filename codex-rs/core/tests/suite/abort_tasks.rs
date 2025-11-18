@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use codex_core::protocol::EventMsg;

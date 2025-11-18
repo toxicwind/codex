@@ -38,7 +38,7 @@ use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use serde_json::Value;
 use std::io::IsTerminal;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use supports_color::Stream;
 use tracing::debug;
 use tracing::error;

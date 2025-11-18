@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use codex_core::config::set_project_trust_level;
 use codex_core::git_info::resolve_root_git_project_for_trust;
@@ -190,7 +190,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use ratatui::Terminal;
 
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn release_event_does_not_change_selection() {

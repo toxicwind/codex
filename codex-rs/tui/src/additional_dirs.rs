@@ -1,5 +1,5 @@
 use codex_core::protocol::SandboxPolicy;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Returns a warning describing why `--add-dir` entries will be ignored for the
 /// resolved sandbox policy. The caller is responsible for presenting the
@@ -34,7 +34,7 @@ mod tests {
     use super::add_dir_warning_message;
     use codex_core::protocol::SandboxPolicy;
     use pretty_assertions::assert_eq;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn returns_none_for_workspace_write() {

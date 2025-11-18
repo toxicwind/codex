@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
 use codex_utils_string::take_bytes_at_char_boundary;
@@ -114,12 +114,13 @@ impl ToolHandler for ReadFileHandler {
         })?;
 
         let ReadFileArgs {
-            file_path,
-            offset,
-            limit,
-            mode,
-            indentation,
+            mut file_path,
+            mut offset,
+            mut limit,
+            mut mode,
+            mut indentation,
         } = args;
+        
 
         if offset == 0 {
             return Err(FunctionCallError::RespondToModel(

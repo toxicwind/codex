@@ -6,7 +6,7 @@ use serde::Serialize;
 use shlex::try_join;
 use std::any::Any;
 use std::fmt::Debug;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 /// Matches a single command token, either a fixed string or one of several allowed alternatives.
 #[derive(Clone, Debug, Eq, PartialEq)]

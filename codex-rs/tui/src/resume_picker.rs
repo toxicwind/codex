@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 
 use chrono::DateTime;
 use chrono::Utc;
@@ -926,8 +926,8 @@ mod tests {
     use insta::assert_snapshot;
     use serde_json::json;
     use std::future::Future;
-    use std::path::PathBuf;
-    use std::sync::Arc;
+    use std::path::{Path, PathBuf};
+    use std::sync::{Arc, OnceLock};
     use std::sync::Mutex;
 
     fn head_with_ts_and_user_text(ts: &str, texts: &[&str]) -> Vec<serde_json::Value> {

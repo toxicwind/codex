@@ -1,4 +1,5 @@
 use std::time::Duration;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use codex_core::protocol::ExecCommandSource;

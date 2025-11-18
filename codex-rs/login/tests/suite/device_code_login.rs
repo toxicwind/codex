@@ -8,7 +8,7 @@ use codex_core::auth::load_auth_dot_json;
 use codex_login::ServerOptions;
 use codex_login::run_device_code_login;
 use serde_json::json;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use tempfile::tempdir;

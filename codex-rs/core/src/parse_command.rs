@@ -5,7 +5,7 @@ use crate::powershell::extract_powershell_command;
 use codex_protocol::parse_command::ParsedCommand;
 use shlex::split as shlex_split;
 use shlex::try_join as shlex_try_join;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub fn shlex_join(tokens: &[String]) -> String {
     shlex_try_join(tokens.iter().map(String::as_str))
@@ -45,7 +45,7 @@ pub fn parse_command(command: &[String]) -> Vec<ParsedCommand> {
 /// Tests are at the top to encourage using TDD + Codex to fix the implementation.
 mod tests {
     use super::*;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use std::string::ToString;
 
     fn shlex_split_safe(s: &str) -> Vec<String> {

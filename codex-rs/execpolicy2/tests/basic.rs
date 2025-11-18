@@ -1,5 +1,5 @@
 use std::any::Any;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use codex_execpolicy2::Decision;
 use codex_execpolicy2::Evaluation;

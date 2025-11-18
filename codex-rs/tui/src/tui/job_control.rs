@@ -1,6 +1,6 @@
 use std::io::Result;
 use std::io::stdout;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::sync::Mutex;
 use std::sync::PoisonError;
 use std::sync::atomic::AtomicBool;

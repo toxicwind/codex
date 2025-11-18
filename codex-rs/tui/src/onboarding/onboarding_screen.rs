@@ -25,7 +25,7 @@ use crate::tui::FrameRequester;
 use crate::tui::Tui;
 use crate::tui::TuiEvent;
 use color_eyre::eyre::Result;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::sync::RwLock;
 
 #[allow(clippy::large_enum_variant)]

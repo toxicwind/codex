@@ -5,7 +5,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CapSids {

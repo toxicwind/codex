@@ -517,7 +517,7 @@ mod tests {
     use codex_protocol::protocol::AskForApproval;
     use pretty_assertions::assert_eq;
     use serde_json::json;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn serialize_new_conversation() -> Result<()> {

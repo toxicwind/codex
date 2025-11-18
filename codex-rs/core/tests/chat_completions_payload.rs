@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use codex_app_server_protocol::AuthMode;
 use codex_core::ContentItem;

@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::ffi::OsStr;
 use std::fs::FileType;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
 use codex_utils_string::take_bytes_at_char_boundary;

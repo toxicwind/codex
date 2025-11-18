@@ -2,6 +2,7 @@
 #![allow(clippy::unwrap_used)]
 
 use std::time::Duration;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use codex_core::model_family::find_family_for_model;

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use codex_core::error::CodexErr;
 use codex_core::error::Result;

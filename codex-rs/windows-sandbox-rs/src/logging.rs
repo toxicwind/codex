@@ -1,7 +1,7 @@
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 const LOG_COMMAND_PREVIEW_LIMIT: usize = 200;
 pub const LOG_FILE_NAME: &str = "sandbox_commands.rust.log";

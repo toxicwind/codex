@@ -15,7 +15,7 @@
 
 use crate::config::Config;
 use dunce::canonicalize as normalize_path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::io::AsyncReadExt;
 use tracing::error;
 

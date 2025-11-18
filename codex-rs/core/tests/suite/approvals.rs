@@ -30,7 +30,7 @@ use serde_json::Value;
 use serde_json::json;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use wiremock::Mock;
 use wiremock::MockServer;
 use wiremock::ResponseTemplate;

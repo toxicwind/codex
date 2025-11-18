@@ -1,7 +1,7 @@
 #![allow(clippy::module_inception)]
 
 use std::collections::VecDeque;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use tokio::sync::Mutex;
 use tokio::sync::Notify;

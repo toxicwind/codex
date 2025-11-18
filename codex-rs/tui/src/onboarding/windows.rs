@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use codex_core::config::edit::ConfigEditsBuilder;
 use crossterm::event::KeyCode;

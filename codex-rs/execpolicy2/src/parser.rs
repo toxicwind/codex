@@ -13,7 +13,7 @@ use starlark::values::list::UnpackList;
 use starlark::values::none::NoneType;
 use std::cell::RefCell;
 use std::cell::RefMut;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use crate::decision::Decision;
 use crate::error::Error;

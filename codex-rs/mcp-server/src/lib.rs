@@ -3,7 +3,7 @@
 
 use std::io::ErrorKind;
 use std::io::Result as IoResult;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use codex_common::CliConfigOverrides;
 use codex_core::config::Config;

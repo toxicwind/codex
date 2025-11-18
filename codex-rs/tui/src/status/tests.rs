@@ -16,7 +16,7 @@ use codex_protocol::config_types::ReasoningEffort;
 use codex_protocol::config_types::ReasoningSummary;
 use insta::assert_snapshot;
 use ratatui::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
 fn test_config(temp_home: &TempDir) -> Config {

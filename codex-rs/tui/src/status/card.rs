@@ -13,7 +13,7 @@ use codex_protocol::ConversationId;
 use ratatui::prelude::*;
 use ratatui::style::Stylize;
 use std::collections::BTreeSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use super::account::StatusAccountDisplay;
 use super::format::FieldFormatter;

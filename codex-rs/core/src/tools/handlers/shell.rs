@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use codex_protocol::models::ShellCommandToolCallParams;
 use codex_protocol::models::ShellToolCallParams;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use crate::apply_patch;
 use crate::apply_patch::InternalApplyPatchInvocation;
@@ -327,7 +327,7 @@ impl ShellHandler {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     use crate::is_safe_command::is_known_safe_command;
     use crate::shell::BashShell;

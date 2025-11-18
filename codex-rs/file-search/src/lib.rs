@@ -12,7 +12,7 @@ use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::num::NonZero;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;

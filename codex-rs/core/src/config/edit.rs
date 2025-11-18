@@ -7,7 +7,7 @@ use codex_protocol::config_types::TrustLevel;
 use codex_utils_tokenizer::warm_model_cache;
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::NamedTempFile;
 use tokio::task;
 use toml_edit::DocumentMut;

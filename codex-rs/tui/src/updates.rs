@@ -10,7 +10,7 @@ use codex_core::default_client::create_client;
 use serde::Deserialize;
 use serde::Serialize;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::version::CODEX_CLI_VERSION;
 

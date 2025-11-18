@@ -1,8 +1,63 @@
 use std::collections::HashMap;
+use std::env;
+use std::fs::OpenOptions;
+use std::io::Write;
+use serde_json::json;
+use tracing::warn;
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
 use std::fmt::Debug;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 use std::sync::atomic::AtomicU64;
+use std::env;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::AuthManager;
 use crate::client_common::REVIEW_PROMPT;
@@ -50,6 +105,52 @@ use tracing::debug;
 use tracing::error;
 use tracing::info;
 use tracing::warn;
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
 
 use crate::ModelProviderInfo;
 use crate::client::ModelClient;
@@ -200,6 +301,15 @@ impl Codex {
             CodexErr::InternalAgentDied
         })?;
         let conversation_id = session.conversation_id;
+        
+        for event in config_notices {
+            tx_event
+                .send(event)
+                .await
+                .map_err(|_| CodexErr::InternalAgentDied)?;
+        }
+        
+        // This task will run until Op::Shutdown is received.
 
         // This task will run until Op::Shutdown is received.
         tokio::spawn(submission_loop(session, config, rx_sub));
@@ -710,12 +820,24 @@ impl Session {
         sub_id: String,
         updates: SessionSettingsUpdate,
     ) -> Arc<TurnContext> {
-        let session_configuration = {
+        let auth_snapshot = self.services.auth_manager.auth();
+        let (session_configuration, override_notice) = {
             let mut state = self.state.lock().await;
-            let session_configuration = state.session_configuration.clone().apply(&updates);
+            let mut session_configuration = state.session_configuration.clone().apply(&updates);
+            let override_notice = maybe_override_chatgpt_model(&mut session_configuration.model, auth_snapshot.clone());
             state.session_configuration = session_configuration.clone();
-            session_configuration
+            (session_configuration, override_notice)
         };
+        if let Some(notice) = override_notice {
+            let _ = self
+                .tx_event
+                .send(Event {
+                    id: INITIAL_SUBMIT_ID.to_owned(),
+                    msg: EventMsg::DeprecationNotice(notice),
+                })
+                .await;
+        }
+        
 
         let mut turn_context: TurnContext = Self::make_turn_context(
             Some(Arc::clone(&self.services.auth_manager)),
@@ -1416,9 +1538,55 @@ mod handlers {
     use codex_protocol::protocol::ReviewRequest;
     use codex_protocol::protocol::TurnAbortReason;
     use codex_protocol::user_input::UserInput;
-    use std::sync::Arc;
+    use std::sync::{Arc, OnceLock};
     use tracing::info;
     use tracing::warn;
+    
+    static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+    
+    fn event_trace_path() -> Option<&'static PathBuf> {
+        EVENT_TRACE_PATH
+            .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+                Some(path) if !path.is_empty() => {
+                    let file = PathBuf::from(path);
+                    if let Some(parent) = file.parent() {
+                        if let Err(err) = std::fs::create_dir_all(parent) {
+                            warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                            return None;
+                        }
+                    }
+                    Some(file)
+                }
+                _ => None,
+            })
+            .as_ref()
+    }
+    
+    fn log_event_for_hypebrut(event: &Event) {
+        let Some(path) = event_trace_path() else {
+            return;
+        };
+    
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs_f64();
+    
+        let payload = serde_json::json!({
+            \"ts\": timestamp,
+            \"event\": event,
+        });
+    
+        if let Err(err) = append_event_line(path, payload.to_string()) {
+            warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+        }
+    }
+    
+    fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+        let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+        file.write_all(line.as_bytes())?;
+        file.write_all(b\"\\n\")
+    }
 
     pub async fn interrupt(sess: &Arc<Session>) {
         sess.interrupt_task().await;
@@ -2347,8 +2515,8 @@ mod tests {
     use pretty_assertions::assert_eq;
     use serde::Deserialize;
     use serde_json::json;
-    use std::path::PathBuf;
-    use std::sync::Arc;
+    use std::path::{Path, PathBuf};
+    use std::sync::{Arc, OnceLock};
     use std::time::Duration as StdDuration;
 
     #[test]
@@ -2969,6 +3137,57 @@ mod tests {
         use crate::protocol::SandboxPolicy;
         use crate::turn_diff_tracker::TurnDiffTracker;
         use std::collections::HashMap;
+        use std::env;
+        use std::fs::OpenOptions;
+        use std::io::Write;
+        use serde_json::json;
+        use tracing::warn;
+        
+        static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+        
+        fn event_trace_path() -> Option<&'static PathBuf> {
+            EVENT_TRACE_PATH
+                .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+                    Some(path) if !path.is_empty() => {
+                        let file = PathBuf::from(path);
+                        if let Some(parent) = file.parent() {
+                            if let Err(err) = std::fs::create_dir_all(parent) {
+                                warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                                return None;
+                            }
+                        }
+                        Some(file)
+                    }
+                    _ => None,
+                })
+                .as_ref()
+        }
+        
+        fn log_event_for_hypebrut(event: &Event) {
+            let Some(path) = event_trace_path() else {
+                return;
+            };
+        
+            let timestamp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs_f64();
+        
+            let payload = serde_json::json!({
+                \"ts\": timestamp,
+                \"event\": event,
+            });
+        
+            if let Err(err) = append_event_line(path, payload.to_string()) {
+                warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+            }
+        }
+        
+        fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+            let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+            file.write_all(line.as_bytes())?;
+            file.write_all(b\"\\n\")
+        }
 
         let (session, mut turn_context_raw) = make_session_and_context();
         // Ensure policy is NOT OnRequest so the early rejection path triggers

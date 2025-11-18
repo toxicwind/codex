@@ -1,5 +1,5 @@
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 
 use tokio::sync::Notify;
 use tokio::sync::mpsc;
@@ -96,6 +96,8 @@ impl UnifiedExecSessionManager {
             session_command: Some(request.command.clone()),
         };
 
+        log_unified_exec_chunk("exec_command", &response);
+        
         if response.session_id.is_some() {
             Self::emit_waiting_status(&context.session, &context.turn, &request.command).await;
         }
@@ -218,6 +220,8 @@ impl UnifiedExecSessionManager {
             )
             .await;
 
+        log_unified_exec_chunk("exec_command", &response);
+        
         if response.session_id.is_some() {
             Self::emit_waiting_status(&session_ref, &turn_ref, &session_command).await;
         }
@@ -499,9 +503,7 @@ impl UnifiedExecSessionManager {
                 collected.extend_from_slice(&chunk);
             }
 
-            if Instant::now() >= deadline {
-                break;
-            }
+            
         }
 
         collected

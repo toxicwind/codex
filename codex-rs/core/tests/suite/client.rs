@@ -37,7 +37,7 @@ use core_test_support::wait_for_event;
 use futures::StreamExt;
 use serde_json::json;
 use std::io::Write;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tempfile::TempDir;
 use uuid::Uuid;
 use wiremock::Mock;

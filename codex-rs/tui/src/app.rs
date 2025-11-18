@@ -36,8 +36,8 @@ use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::thread;
@@ -861,8 +861,8 @@ mod tests {
     use codex_core::protocol::SessionConfiguredEvent;
     use codex_protocol::ConversationId;
     use ratatui::prelude::Line;
-    use std::path::PathBuf;
-    use std::sync::Arc;
+    use std::path::{Path, PathBuf};
+    use std::sync::{Arc, OnceLock};
     use std::sync::atomic::AtomicBool;
 
     fn make_test_app() -> App {

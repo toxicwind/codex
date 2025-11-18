@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use tree_sitter::Node;
 use tree_sitter::Parser;

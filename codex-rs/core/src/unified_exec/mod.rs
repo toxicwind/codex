@@ -22,8 +22,59 @@
 //! - `session_manager.rs`: orchestration (approvals, sandboxing, reuse) and request handling.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::env;
+use std::fs::OpenOptions;
+use std::io::Write;
+use serde_json::json;
+use tracing::warn;
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 use std::sync::atomic::AtomicI32;
 use std::time::Duration;
 
@@ -42,7 +93,7 @@ pub(crate) use errors::UnifiedExecError;
 pub(crate) use session::UnifiedExecSession;
 
 pub(crate) const MIN_YIELD_TIME_MS: u64 = 250;
-pub(crate) const MAX_YIELD_TIME_MS: u64 = 30_000;
+pub(crate) const MAX_YIELD_TIME_MS: u64 = 5_000;
 pub(crate) const DEFAULT_MAX_OUTPUT_TOKENS: usize = 10_000;
 pub(crate) const UNIFIED_EXEC_OUTPUT_MAX_BYTES: usize = 1024 * 1024; // 1 MiB
 
@@ -136,7 +187,7 @@ mod tests {
     use crate::unified_exec::ExecCommandRequest;
     use crate::unified_exec::WriteStdinRequest;
     use core_test_support::skip_if_sandbox;
-    use std::sync::Arc;
+    use std::sync::{Arc, OnceLock};
     use tokio::time::Duration;
 
     use super::session::OutputBufferState;

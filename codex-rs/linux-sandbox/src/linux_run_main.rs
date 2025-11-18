@@ -1,6 +1,6 @@
 use clap::Parser;
 use std::ffi::CString;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::landlock::apply_sandbox_policy_to_current_thread;
 

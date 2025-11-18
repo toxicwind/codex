@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tracing_test::traced_test;
 
 use codex_app_server_protocol::AuthMode;

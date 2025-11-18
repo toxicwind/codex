@@ -3,7 +3,7 @@ mod pid_tracker;
 #[cfg(target_os = "macos")]
 mod seatbelt;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use codex_common::CliConfigOverrides;
 use codex_core::config::Config;

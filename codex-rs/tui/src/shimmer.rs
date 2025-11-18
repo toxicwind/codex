@@ -1,5 +1,6 @@
 use std::sync::OnceLock;
 use std::time::Duration;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use ratatui::style::Color;

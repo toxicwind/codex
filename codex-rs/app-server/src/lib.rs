@@ -6,7 +6,7 @@ use codex_core::config::ConfigOverrides;
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use std::io::ErrorKind;
 use std::io::Result as IoResult;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::message_processor::MessageProcessor;
 use crate::outgoing_message::OutgoingMessage;

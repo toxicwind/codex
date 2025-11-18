@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use codex_core::parse_command::extract_shell_command;
 use dirs::home_dir;

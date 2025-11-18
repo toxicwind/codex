@@ -1,4 +1,5 @@
 use std::time::Duration;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 // Heuristic thresholds for detecting paste-like input bursts.

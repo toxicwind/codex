@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::protocol::AskForApproval;
 use codex_protocol::config_types::ReasoningEffort;

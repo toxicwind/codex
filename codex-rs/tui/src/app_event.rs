@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use codex_common::approval_presets::ApprovalPreset;
 use codex_common::model_presets::ModelPreset;

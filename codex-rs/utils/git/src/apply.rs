@@ -11,7 +11,7 @@ use regex::Regex;
 use std::ffi::OsStr;
 use std::io;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Parameters for invoking [`apply_git_patch`].
 #[derive(Debug, Clone)]

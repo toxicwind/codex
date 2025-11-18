@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::function_tool::FunctionCallError;
 use crate::is_safe_command::is_known_safe_command;
@@ -56,8 +56,8 @@ struct WriteStdinArgs {
 }
 
 fn default_exec_yield_time_ms() -> u64 {
-    10000
-}
+      1000
+  }
 
 fn default_write_stdin_yield_time_ms() -> u64 {
     250

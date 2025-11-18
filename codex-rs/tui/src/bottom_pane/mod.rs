@@ -1,5 +1,5 @@
 //! Bottom pane: shows the ChatComposer or a BottomPaneView, if one is active.
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::app_event_sender::AppEventSender;
 use crate::bottom_pane::queued_user_messages::QueuedUserMessages;

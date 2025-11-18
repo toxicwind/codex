@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use codex_app_server_protocol::GitSha;
 use codex_protocol::protocol::GitInfo;
@@ -601,7 +601,7 @@ mod tests {
 
     use core_test_support::skip_if_sandbox;
     use std::fs;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use tempfile::TempDir;
 
     // Helper function to create a test git repository

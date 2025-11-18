@@ -50,7 +50,7 @@ use mcp_types::ContentBlock;
 use mcp_types::TextContent;
 use pretty_assertions::assert_eq;
 use serde_json::json;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 fn event(id: &str, msg: EventMsg) -> Event {

@@ -4,7 +4,7 @@ use crate::config::CONFIG_TOML_FILE;
 use macos::load_managed_admin_config_layer;
 use std::io;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::fs;
 use toml::Value as TomlValue;
 

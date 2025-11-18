@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use codex_core::CodexConversation;
 use codex_core::ConversationManager;

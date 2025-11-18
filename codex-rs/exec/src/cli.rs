@@ -1,7 +1,7 @@
 use clap::Parser;
 use clap::ValueEnum;
 use codex_common::CliConfigOverrides;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(version)]

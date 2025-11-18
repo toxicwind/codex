@@ -13,7 +13,7 @@ use codex_login::run_login_server;
 use codex_protocol::config_types::ForcedLoginMethod;
 use std::io::IsTerminal;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub async fn login_with_chatgpt(
     codex_home: PathBuf,

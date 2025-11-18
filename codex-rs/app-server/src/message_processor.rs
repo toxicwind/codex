@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::codex_message_processor::CodexMessageProcessor;
 use crate::error_code::INVALID_REQUEST_ERROR_CODE;
@@ -19,7 +19,7 @@ use codex_core::default_client::USER_AGENT_SUFFIX;
 use codex_core::default_client::get_codex_user_agent;
 use codex_feedback::CodexFeedback;
 use codex_protocol::protocol::SessionSource;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 pub(crate) struct MessageProcessor {
     outgoing: Arc<OutgoingMessageSender>,

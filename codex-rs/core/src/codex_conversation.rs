@@ -3,7 +3,7 @@ use crate::error::Result as CodexResult;
 use crate::protocol::Event;
 use crate::protocol::Op;
 use crate::protocol::Submission;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct CodexConversation {
     codex: Codex,

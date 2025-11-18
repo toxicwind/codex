@@ -5,7 +5,7 @@ use codex_protocol::protocol::SessionSource;
 use serde_json::json;
 use std::fs;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 /// Create a minimal rollout file under `CODEX_HOME/sessions/YYYY/MM/DD/`.

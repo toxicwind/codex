@@ -40,7 +40,7 @@ use codex_core::protocol::Op;
 use codex_core::protocol::ReviewDecision;
 use codex_protocol::ConversationId;
 use std::convert::TryFrom;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tokio::sync::oneshot;
 use tracing::error;
 

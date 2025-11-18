@@ -1,7 +1,7 @@
 use std::mem::swap;
 use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 
 use anyhow::Result;
 use codex_core::CodexAuth;

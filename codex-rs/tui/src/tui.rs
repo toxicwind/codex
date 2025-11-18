@@ -5,10 +5,11 @@ use std::io::Stdout;
 use std::io::stdout;
 use std::panic;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use crossterm::Command;

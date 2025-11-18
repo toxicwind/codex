@@ -1,5 +1,5 @@
 use std::num::NonZero;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use clap::ArgAction;
 use clap::Parser;

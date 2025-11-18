@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use crate::Prompt;
 use crate::client_common::ResponseEvent;

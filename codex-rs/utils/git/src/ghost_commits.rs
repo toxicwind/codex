@@ -3,7 +3,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::io;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use tempfile::Builder;
 

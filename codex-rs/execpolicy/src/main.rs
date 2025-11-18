@@ -11,7 +11,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde::de;
 use starlark::Error as StarlarkError;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 const MATCHED_BUT_WRITES_FILES_EXIT_CODE: i32 = 12;

@@ -2,8 +2,8 @@ use std::collections::VecDeque;
 use std::fs;
 use std::io::Write;
 use std::io::{self};
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -178,7 +178,7 @@ impl CodexLogSnapshot {
         use std::collections::BTreeMap;
         use std::fs;
         use std::str::FromStr;
-        use std::sync::Arc;
+        use std::sync::{Arc, OnceLock};
 
         use sentry::Client;
         use sentry::ClientOptions;

@@ -28,7 +28,59 @@ use owo_colors::OwoColorize;
 use owo_colors::Style;
 use shlex::try_join;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::env;
+use std::fs::OpenOptions;
+use std::io::Write;
+use serde_json::json;
+use tracing::warn;
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use crate::event_processor::CodexStatus;
@@ -281,11 +333,17 @@ impl EventProcessor for EventProcessorWithHumanOutput {
             }) => {
                 let duration = format!(" in {}", format_duration(duration));
 
-                let truncated_output = aggregated_output
-                    .lines()
-                    .take(MAX_OUTPUT_LINES_FOR_EXEC_TOOL_CALL)
-                    .collect::<Vec<_>>()
-                    .join("\n");
+                let output_cap = exec_output_line_cap();
+                let truncated_output = if let Some(cap) = output_cap {
+                    aggregated_output
+                        .lines()
+                        .take(cap)
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                } else {
+                    aggregated_output
+                };
+                
                 match exit_code {
                     0 => {
                         let title = format!(" succeeded{duration}:");
@@ -334,9 +392,16 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     let pretty =
                         serde_json::to_string_pretty(&val).unwrap_or_else(|_| val.to_string());
 
-                    for line in pretty.lines().take(MAX_OUTPUT_LINES_FOR_EXEC_TOOL_CALL) {
-                        eprintln!("{}", line.style(self.dimmed));
+                    if let Some(cap) = exec_output_line_cap() {
+                        for line in pretty.lines().take(cap) {
+                            eprintln!("{}", line.style(self.dimmed));
+                        }
+                    } else {
+                        for line in pretty.lines() {
+                            eprintln!("{}", line.style(self.dimmed));
+                        }
                     }
+                    
                 }
             }
             EventMsg::WebSearchEnd(WebSearchEndEvent { call_id: _, query }) => {

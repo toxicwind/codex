@@ -1,6 +1,6 @@
 use std::any::TypeId;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 
 use crate::app::App;
 use crate::history_cell::SessionInfoCell;
@@ -416,7 +416,7 @@ mod tests {
     use crate::history_cell::AgentMessageCell;
     use crate::history_cell::HistoryCell;
     use ratatui::prelude::Line;
-    use std::sync::Arc;
+    use std::sync::{Arc, OnceLock};
 
     #[test]
     fn trim_transcript_for_first_user_drops_user_and_newer_cells() {

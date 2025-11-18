@@ -2,7 +2,7 @@ use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::path::Component;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::GitToolingError;
