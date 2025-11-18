@@ -106,7 +106,7 @@ pub(crate) fn exec_policy_for(
     Ok(Some(policy))
 }
 
-pub(crate) fn evaluate_with_policy(
+fn evaluate_with_policy(
     policy: &Policy,
     command: &[String],
     approval_policy: AskForApproval,
