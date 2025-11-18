@@ -275,7 +275,7 @@ prefix_rule(pattern=["rm"], decision="forbidden")
 
     #[test]
     fn approval_requirement_falls_back_to_heuristics() {
-        let command = vec!["ls".to_string()];
+        let command = vec!["python".to_string()];
 
         let requirement = approval_requirement_for_command(
             None,
