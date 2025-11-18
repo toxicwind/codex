@@ -248,6 +248,32 @@ prefix_rule(pattern=["rm"], decision="forbidden")
     }
 
     #[test]
+    fn approval_requirement_respects_approval_policy() {
+        let policy_src = r#"prefix_rule(pattern=["rm"], decision="prompt")"#;
+        let mut parser = PolicyParser::new();
+        parser
+            .parse("test.codexpolicy", policy_src)
+            .expect("parse policy");
+        let policy = parser.build();
+        let command = vec!["rm".to_string()];
+
+        let requirement = approval_requirement_for_command(
+            Some(&policy),
+            &command,
+            AskForApproval::Never,
+            &SandboxPolicy::DangerFullAccess,
+            false,
+        );
+
+        assert_eq!(
+            requirement,
+            ApprovalRequirement::Forbidden {
+                reason: PROMPT_REASON.to_string()
+            }
+        );
+    }
+
+    #[test]
     fn approval_requirement_falls_back_to_heuristics() {
         let command = vec!["ls".to_string()];
 
