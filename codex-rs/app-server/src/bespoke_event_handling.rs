@@ -390,9 +390,7 @@ async fn handle_turn_complete(
     event_id: String,
     outgoing: Arc<OutgoingMessageSender>,
 ) {
-    // Synthesize turn/completed with last known usage and any captured error.
     let (usage_opt, error_message) = take_turn_accum(conversation_id, &event_id).await;
-
     let usage = map_usage_to_v2(usage_opt.as_ref());
 
     let (status, error) = if let Some(message) = error_message {
@@ -618,13 +616,165 @@ async fn construct_mcp_tool_call_end_notification(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::outgoing_message::OutgoingMessage;
+    use crate::outgoing_message::OutgoingMessageSender;
+    use anyhow::Result;
+    use anyhow::anyhow;
+    use anyhow::bail;
     use codex_core::protocol::McpInvocation;
+    use codex_core::protocol::TokenUsage;
+    use codex_core::protocol::TokenUsageInfo;
     use mcp_types::CallToolResult;
     use mcp_types::ContentBlock;
     use mcp_types::TextContent;
     use pretty_assertions::assert_eq;
     use serde_json::Value as JsonValue;
     use std::time::Duration;
+    use tokio::sync::mpsc;
+
+    fn v2_usage(input: i32, cached: i32, output: i32) -> V2Usage {
+        V2Usage {
+            input_tokens: input,
+            cached_input_tokens: cached,
+            output_tokens: output,
+        }
+    }
+
+    fn sample_usage_info() -> TokenUsageInfo {
+        TokenUsageInfo {
+            total_token_usage: TokenUsage {
+                input_tokens: 10,
+                cached_input_tokens: 2,
+                output_tokens: 5,
+                reasoning_output_tokens: 0,
+                total_tokens: 0,
+            },
+            last_token_usage: TokenUsage::default(),
+            model_context_window: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_handle_token_count_records_usage() -> Result<()> {
+        let conversation_id = ConversationId::new();
+        let event_id = "ev1".to_string();
+
+        handle_token_count(conversation_id, event_id.clone(), sample_usage_info()).await;
+
+        let (usage_opt, err_opt) = take_turn_accum(conversation_id, &event_id).await;
+        assert_eq!(err_opt, None);
+        let usage = usage_opt.expect("usage should be recorded");
+        assert_eq!(usage.input_tokens, 10);
+        assert_eq!(usage.cached_input_tokens, 2);
+        assert_eq!(usage.output_tokens, 5);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_handle_error_records_message() -> Result<()> {
+        let conversation_id = ConversationId::new();
+        let event_id = "err1".to_string();
+
+        handle_error(conversation_id, event_id.clone(), "boom".to_string()).await;
+
+        let (usage_opt, err_opt) = take_turn_accum(conversation_id, &event_id).await;
+        assert!(usage_opt.is_none());
+        assert_eq!(err_opt, Some("boom".to_string()));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_handle_turn_complete_emits_completed_without_error() -> Result<()> {
+        let conversation_id = ConversationId::new();
+        let event_id = "complete1".to_string();
+        handle_token_count(conversation_id, event_id.clone(), sample_usage_info()).await;
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let outgoing = Arc::new(OutgoingMessageSender::new(tx));
+
+        handle_turn_complete(conversation_id, event_id.clone(), outgoing).await;
+
+        let msg = rx
+            .recv()
+            .await
+            .ok_or_else(|| anyhow!("should send one notification"))?;
+        match msg {
+            OutgoingMessage::AppServerNotification(ServerNotification::TurnCompleted(n)) => {
+                assert_eq!(n.turn.id, event_id);
+                assert_eq!(n.turn.status, TurnStatus::Completed);
+                assert_eq!(n.turn.error, None);
+                assert_eq!(n.usage, v2_usage(10, 2, 5));
+            }
+            other => bail!("unexpected message: {other:?}"),
+        }
+        assert!(rx.try_recv().is_err(), "no extra messages expected");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_handle_turn_interrupted_emits_interrupted_with_error() -> Result<()> {
+        let conversation_id = ConversationId::new();
+        let event_id = "interrupt1".to_string();
+        handle_error(conversation_id, event_id.clone(), "oops".to_string()).await;
+        handle_token_count(conversation_id, event_id.clone(), sample_usage_info()).await;
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let outgoing = Arc::new(OutgoingMessageSender::new(tx));
+
+        handle_turn_interrupted(conversation_id, event_id.clone(), outgoing).await;
+
+        let msg = rx
+            .recv()
+            .await
+            .ok_or_else(|| anyhow!("should send one notification"))?;
+        match msg {
+            OutgoingMessage::AppServerNotification(ServerNotification::TurnCompleted(n)) => {
+                assert_eq!(n.turn.id, event_id);
+                assert_eq!(n.turn.status, TurnStatus::Interrupted);
+                assert_eq!(
+                    n.turn.error,
+                    Some(TurnError {
+                        message: "oops".to_string()
+                    })
+                );
+                assert_eq!(n.usage, v2_usage(10, 2, 5));
+            }
+            other => bail!("unexpected message: {other:?}"),
+        }
+        assert!(rx.try_recv().is_err(), "no extra messages expected");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_handle_turn_complete_emits_failed_with_error() -> Result<()> {
+        let conversation_id = ConversationId::new();
+        let event_id = "complete_err1".to_string();
+        handle_error(conversation_id, event_id.clone(), "bad".to_string()).await;
+        handle_token_count(conversation_id, event_id.clone(), sample_usage_info()).await;
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let outgoing = Arc::new(OutgoingMessageSender::new(tx));
+
+        handle_turn_complete(conversation_id, event_id.clone(), outgoing).await;
+
+        let msg = rx
+            .recv()
+            .await
+            .ok_or_else(|| anyhow!("should send one notification"))?;
+        match msg {
+            OutgoingMessage::AppServerNotification(ServerNotification::TurnCompleted(n)) => {
+                assert_eq!(n.turn.id, event_id);
+                assert_eq!(n.turn.status, TurnStatus::Failed);
+                assert_eq!(
+                    n.turn.error,
+                    Some(TurnError {
+                        message: "bad".to_string()
+                    })
+                );
+                assert_eq!(n.usage, v2_usage(10, 2, 5));
+            }
+            other => bail!("unexpected message: {other:?}"),
+        }
+        assert!(rx.try_recv().is_err(), "no extra messages expected");
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_construct_mcp_tool_call_begin_notification_with_args() {
