@@ -15,6 +15,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use std::sync::OnceLock;
+use std::sync::OnceLock;
+use std::sync::OnceLock;
 use std::time::Instant;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::info;
@@ -453,6 +455,8 @@ pub async fn run_main(cli: Cli, _codex_linux_sandbox_exe: Option<PathBuf>) -> an
 
     // Event-driven redraws with a tiny coalescing scheduler (snappy UI, no fixed 250ms tick).
     let mut needs_redraw = true;
+    use std::sync::OnceLock;
+    use std::sync::OnceLock;
     use std::sync::OnceLock;
     use std::time::Instant;
     use tokio::time::Instant as TokioInstant;

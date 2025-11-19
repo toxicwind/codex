@@ -102,6 +102,10 @@ impl UnifiedExecSessionManager {
 
         log_unified_exec_chunk("exec_command", &response);
         
+        log_unified_exec_chunk("exec_command", &response);
+        
+        log_unified_exec_chunk("exec_command", &response);
+        
         if response.session_id.is_some() {
             Self::emit_waiting_status(&context.session, &context.turn, &request.command).await;
         }
@@ -225,6 +229,10 @@ impl UnifiedExecSessionManager {
             )
             .await;
 
+        log_unified_exec_chunk("exec_command", &response);
+        
+        log_unified_exec_chunk("exec_command", &response);
+        
         log_unified_exec_chunk("exec_command", &response);
         
         if response.session_id.is_some() {

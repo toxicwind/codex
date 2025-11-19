@@ -50,10 +50,258 @@ fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
     file.write_all(line.as_bytes())?;
     file.write_all(b\"\\n\")
 }
+use std::env;
+use std::fs::OpenOptions;
+use std::io::Write;
+use serde_json::json;
+use tracing::warn;
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
+use std::env;
+use std::fs::OpenOptions;
+use std::io::Write;
+use serde_json::json;
+use tracing::warn;
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::sync::atomic::AtomicU64;
+use std::env;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::env;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -105,6 +353,98 @@ use tracing::debug;
 use tracing::error;
 use tracing::info;
 use tracing::warn;
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
+
+static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+fn event_trace_path() -> Option<&'static PathBuf> {
+    EVENT_TRACE_PATH
+        .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+            Some(path) if !path.is_empty() => {
+                let file = PathBuf::from(path);
+                if let Some(parent) = file.parent() {
+                    if let Err(err) = std::fs::create_dir_all(parent) {
+                        warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                        return None;
+                    }
+                }
+                Some(file)
+            }
+            _ => None,
+        })
+        .as_ref()
+}
+
+fn log_event_for_hypebrut(event: &Event) {
+    let Some(path) = event_trace_path() else {
+        return;
+    };
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+
+    let payload = serde_json::json!({
+        \"ts\": timestamp,
+        \"event\": event,
+    });
+
+    if let Err(err) = append_event_line(path, payload.to_string()) {
+        warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+    }
+}
+
+fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    file.write_all(b\"\\n\")
+}
 
 static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 
@@ -301,6 +641,24 @@ impl Codex {
             CodexErr::InternalAgentDied
         })?;
         let conversation_id = session.conversation_id;
+        
+        for event in config_notices {
+            tx_event
+                .send(event)
+                .await
+                .map_err(|_| CodexErr::InternalAgentDied)?;
+        }
+        
+        // This task will run until Op::Shutdown is received.
+        
+        for event in config_notices {
+            tx_event
+                .send(event)
+                .await
+                .map_err(|_| CodexErr::InternalAgentDied)?;
+        }
+        
+        // This task will run until Op::Shutdown is received.
         
         for event in config_notices {
             tx_event
@@ -1541,6 +1899,98 @@ mod handlers {
     use std::sync::{Arc, OnceLock};
     use tracing::info;
     use tracing::warn;
+    
+    static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+    
+    fn event_trace_path() -> Option<&'static PathBuf> {
+        EVENT_TRACE_PATH
+            .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+                Some(path) if !path.is_empty() => {
+                    let file = PathBuf::from(path);
+                    if let Some(parent) = file.parent() {
+                        if let Err(err) = std::fs::create_dir_all(parent) {
+                            warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                            return None;
+                        }
+                    }
+                    Some(file)
+                }
+                _ => None,
+            })
+            .as_ref()
+    }
+    
+    fn log_event_for_hypebrut(event: &Event) {
+        let Some(path) = event_trace_path() else {
+            return;
+        };
+    
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs_f64();
+    
+        let payload = serde_json::json!({
+            \"ts\": timestamp,
+            \"event\": event,
+        });
+    
+        if let Err(err) = append_event_line(path, payload.to_string()) {
+            warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+        }
+    }
+    
+    fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+        let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+        file.write_all(line.as_bytes())?;
+        file.write_all(b\"\\n\")
+    }
+    
+    static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+    
+    fn event_trace_path() -> Option<&'static PathBuf> {
+        EVENT_TRACE_PATH
+            .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+                Some(path) if !path.is_empty() => {
+                    let file = PathBuf::from(path);
+                    if let Some(parent) = file.parent() {
+                        if let Err(err) = std::fs::create_dir_all(parent) {
+                            warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                            return None;
+                        }
+                    }
+                    Some(file)
+                }
+                _ => None,
+            })
+            .as_ref()
+    }
+    
+    fn log_event_for_hypebrut(event: &Event) {
+        let Some(path) = event_trace_path() else {
+            return;
+        };
+    
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs_f64();
+    
+        let payload = serde_json::json!({
+            \"ts\": timestamp,
+            \"event\": event,
+        });
+    
+        if let Err(err) = append_event_line(path, payload.to_string()) {
+            warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+        }
+    }
+    
+    fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+        let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+        file.write_all(line.as_bytes())?;
+        file.write_all(b\"\\n\")
+    }
     
     static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
     
@@ -3142,6 +3592,246 @@ mod tests {
         use std::io::Write;
         use serde_json::json;
         use tracing::warn;
+        
+        static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+        
+        fn event_trace_path() -> Option<&'static PathBuf> {
+            EVENT_TRACE_PATH
+                .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+                    Some(path) if !path.is_empty() => {
+                        let file = PathBuf::from(path);
+                        if let Some(parent) = file.parent() {
+                            if let Err(err) = std::fs::create_dir_all(parent) {
+                                warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                                return None;
+                            }
+                        }
+                        Some(file)
+                    }
+                    _ => None,
+                })
+                .as_ref()
+        }
+        
+        fn log_event_for_hypebrut(event: &Event) {
+            let Some(path) = event_trace_path() else {
+                return;
+            };
+        
+            let timestamp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs_f64();
+        
+            let payload = serde_json::json!({
+                \"ts\": timestamp,
+                \"event\": event,
+            });
+        
+            if let Err(err) = append_event_line(path, payload.to_string()) {
+                warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+            }
+        }
+        
+        fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+            let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+            file.write_all(line.as_bytes())?;
+            file.write_all(b\"\\n\")
+        }
+        use std::env;
+        use std::fs::OpenOptions;
+        use std::io::Write;
+        use serde_json::json;
+        use tracing::warn;
+        
+        static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+        
+        fn event_trace_path() -> Option<&'static PathBuf> {
+            EVENT_TRACE_PATH
+                .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+                    Some(path) if !path.is_empty() => {
+                        let file = PathBuf::from(path);
+                        if let Some(parent) = file.parent() {
+                            if let Err(err) = std::fs::create_dir_all(parent) {
+                                warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                                return None;
+                            }
+                        }
+                        Some(file)
+                    }
+                    _ => None,
+                })
+                .as_ref()
+        }
+        
+        fn log_event_for_hypebrut(event: &Event) {
+            let Some(path) = event_trace_path() else {
+                return;
+            };
+        
+            let timestamp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs_f64();
+        
+            let payload = serde_json::json!({
+                \"ts\": timestamp,
+                \"event\": event,
+            });
+        
+            if let Err(err) = append_event_line(path, payload.to_string()) {
+                warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+            }
+        }
+        
+        fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+            let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+            file.write_all(line.as_bytes())?;
+            file.write_all(b\"\\n\")
+        }
+        
+        static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+        
+        fn event_trace_path() -> Option<&'static PathBuf> {
+            EVENT_TRACE_PATH
+                .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+                    Some(path) if !path.is_empty() => {
+                        let file = PathBuf::from(path);
+                        if let Some(parent) = file.parent() {
+                            if let Err(err) = std::fs::create_dir_all(parent) {
+                                warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                                return None;
+                            }
+                        }
+                        Some(file)
+                    }
+                    _ => None,
+                })
+                .as_ref()
+        }
+        
+        fn log_event_for_hypebrut(event: &Event) {
+            let Some(path) = event_trace_path() else {
+                return;
+            };
+        
+            let timestamp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs_f64();
+        
+            let payload = serde_json::json!({
+                \"ts\": timestamp,
+                \"event\": event,
+            });
+        
+            if let Err(err) = append_event_line(path, payload.to_string()) {
+                warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+            }
+        }
+        
+        fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+            let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+            file.write_all(line.as_bytes())?;
+            file.write_all(b\"\\n\")
+        }
+        use std::env;
+        use std::fs::OpenOptions;
+        use std::io::Write;
+        use serde_json::json;
+        use tracing::warn;
+        
+        static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+        
+        fn event_trace_path() -> Option<&'static PathBuf> {
+            EVENT_TRACE_PATH
+                .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+                    Some(path) if !path.is_empty() => {
+                        let file = PathBuf::from(path);
+                        if let Some(parent) = file.parent() {
+                            if let Err(err) = std::fs::create_dir_all(parent) {
+                                warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                                return None;
+                            }
+                        }
+                        Some(file)
+                    }
+                    _ => None,
+                })
+                .as_ref()
+        }
+        
+        fn log_event_for_hypebrut(event: &Event) {
+            let Some(path) = event_trace_path() else {
+                return;
+            };
+        
+            let timestamp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs_f64();
+        
+            let payload = serde_json::json!({
+                \"ts\": timestamp,
+                \"event\": event,
+            });
+        
+            if let Err(err) = append_event_line(path, payload.to_string()) {
+                warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+            }
+        }
+        
+        fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+            let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+            file.write_all(line.as_bytes())?;
+            file.write_all(b\"\\n\")
+        }
+        
+        static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+        
+        fn event_trace_path() -> Option<&'static PathBuf> {
+            EVENT_TRACE_PATH
+                .get_or_init(|| match env::var_os(\"HB_CODEX_EVENT_LOG\") {
+                    Some(path) if !path.is_empty() => {
+                        let file = PathBuf::from(path);
+                        if let Some(parent) = file.parent() {
+                            if let Err(err) = std::fs::create_dir_all(parent) {
+                                warn!(?err, path = %parent.display(), \"failed to create HB_CODEX_EVENT_LOG parent\");
+                                return None;
+                            }
+                        }
+                        Some(file)
+                    }
+                    _ => None,
+                })
+                .as_ref()
+        }
+        
+        fn log_event_for_hypebrut(event: &Event) {
+            let Some(path) = event_trace_path() else {
+                return;
+            };
+        
+            let timestamp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs_f64();
+        
+            let payload = serde_json::json!({
+                \"ts\": timestamp,
+                \"event\": event,
+            });
+        
+            if let Err(err) = append_event_line(path, payload.to_string()) {
+                warn!(?err, path = %path.display(), \"failed to append HB_CODEX_EVENT_LOG entry\");
+            }
+        }
+        
+        fn append_event_line(path: &Path, line: String) -> std::io::Result<()> {
+            let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+            file.write_all(line.as_bytes())?;
+            file.write_all(b\"\\n\")
+        }
         
         static EVENT_TRACE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
         

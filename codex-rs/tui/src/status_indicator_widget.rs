@@ -3,6 +3,8 @@
 
 use std::time::Duration;
 use std::sync::OnceLock;
+use std::sync::OnceLock;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use codex_core::protocol::Op;
@@ -173,6 +175,8 @@ mod tests {
     use ratatui::Terminal;
     use ratatui::backend::TestBackend;
     use std::time::Duration;
+    use std::sync::OnceLock;
+    use std::sync::OnceLock;
     use std::sync::OnceLock;
     use std::time::Instant;
     use tokio::sync::mpsc::unbounded_channel;

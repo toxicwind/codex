@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::shell::ShellType;
 use crate::shell::detect_shell_type;

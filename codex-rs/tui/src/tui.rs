@@ -10,6 +10,8 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 use std::sync::OnceLock;
+use std::sync::OnceLock;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use crossterm::Command;
